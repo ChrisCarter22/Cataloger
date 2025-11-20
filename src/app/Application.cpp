@@ -1,10 +1,12 @@
 #include "Application.h"
 
 #include <filesystem>
+#include <iostream>
 #include <optional>
 #include <string>
 #include <vector>
 
+#include "mock_ui/PreviewEventLogger.h"
 #include "services/catalog/CatalogService.h"
 #include "services/delivery/DeliveryService.h"
 #include "services/ingest/IngestService.h"
@@ -39,9 +41,12 @@ void Application::bootstrap() {
 
   services::preview::PreviewService preview_service;
   preview_service.setCatalogService(&catalog_service);
+  mock_ui::PreviewEventLogger preview_logger;
   std::vector<services::preview::CacheEvent> cache_events;
-  preview_service.setEventSink(
-      [&](const services::preview::CacheEvent& event) { cache_events.push_back(event); });
+  preview_service.setEventSink([&](const services::preview::CacheEvent& event) {
+    cache_events.push_back(event);
+    preview_logger.handle(event);
+  });
   preview_service.primeCaches(2);
   preview_service.warmRoot(root_id, root_path);
 
@@ -70,6 +75,20 @@ void Application::bootstrap() {
 
   preview_service.waitUntilIdle();
 
+  std::size_t cache_hits = 0;
+  std::size_t cache_misses = 0;
+  std::size_t cache_errors = 0;
+  for (const auto& event : cache_events) {
+    if (event.hit) {
+      ++cache_hits;
+    } else {
+      ++cache_misses;
+    }
+    if (event.error) {
+      ++cache_errors;
+    }
+  }
+
   [[maybe_unused]] const auto catalog_size = stored_files.size();
   [[maybe_unused]] const auto queued_sources = ingest_service.sources().size();
   [[maybe_unused]] const auto last_template = metadata_service.lastTemplate();
@@ -88,6 +107,11 @@ void Application::bootstrap() {
   (void)profile;
   (void)cache_events;
   (void)cached_preview;
+
+  std::cout << "[preview] cache hits=" << cache_hits
+            << " misses=" << cache_misses
+            << " errors=" << cache_errors << "\n";
+  preview_logger.renderSummary();
 }
 
 int Application::run() {

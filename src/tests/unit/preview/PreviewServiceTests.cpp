@@ -1,16 +1,20 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <memory>
 #include <string>
 #include <unordered_set>
 #include <vector>
 
+#include "platform/gpu/GpuBridge.h"
 #include "services/catalog/CatalogService.h"
 #include "services/preview/PreviewService.h"
 #include "services/preview/PreviewTypes.h"
+#include <lcms2.h>
 
 namespace {
 
@@ -26,6 +30,15 @@ void writeFile(const std::filesystem::path& path, std::size_t size) {
     const auto value = static_cast<char>('A' + (i % 26));
     stream.write(&value, 1);
   }
+}
+
+void writeICCProfile(const std::filesystem::path& path) {
+  cmsHPROFILE profile = cmsCreate_sRGBProfile();
+  if (!profile) {
+    return;
+  }
+  cmsSaveProfileToFile(profile, path.string().c_str());
+  cmsCloseProfile(profile);
 }
 
 }  // namespace
@@ -82,13 +95,15 @@ TEST_F(PreviewServiceTest, WarmRootCachesFiles) {
   ASSERT_GE(events.size(), relative_files_.size());
   const auto key = relative_files_.front() + "#" + std::to_string(root_id_);
   const auto cached = preview_.cachedPreview(key);
-  EXPECT_TRUE(cached.has_value());
+  ASSERT_TRUE(cached.has_value());
+  EXPECT_TRUE(cached->color_managed);
+  EXPECT_FALSE(cached->color_profile.empty());
 
   const auto files = catalog_.listFiles(root_id_);
   ASSERT_EQ(files.size(), relative_files_.size());
-  EXPECT_EQ(files.front().preview_state,
+  EXPECT_NE(files.front().preview_state,
             static_cast<int>(
-                cataloger::services::preview::PreviewState::kGpuResident));
+                cataloger::services::preview::PreviewState::kIdle));
 }
 
 TEST_F(PreviewServiceTest, RequestPreviewPreloadsNeighbors) {
@@ -111,4 +126,52 @@ TEST_F(PreviewServiceTest, RequestPreviewPreloadsNeighbors) {
     relative_paths.insert(event.relative_path);
   }
   EXPECT_TRUE(relative_paths.contains(relative_files_[1]));
+}
+
+class FailingBridge : public cataloger::platform::gpu::GpuBridge {
+public:
+  bool upload(const cataloger::services::preview::PreviewImage&,
+              std::string& error) override {
+    error = "forced failure";
+    return false;
+  }
+
+  cataloger::platform::gpu::Backend backend() const noexcept override {
+    return cataloger::platform::gpu::Backend::kStub;
+  }
+};
+
+TEST_F(PreviewServiceTest, EmitsErrorWhenGpuUploadFails) {
+  preview_.setGpuBridgeForTesting(std::make_unique<FailingBridge>());
+
+  std::vector<cataloger::services::preview::CacheEvent> events;
+  preview_.setEventSink(
+      [&](const cataloger::services::preview::CacheEvent& event) {
+        events.push_back(event);
+      });
+  preview_.warmRoot(root_id_, root_path_);
+  preview_.waitUntilIdle();
+
+  const auto it =
+      std::find_if(events.begin(), events.end(),
+                   [](const cataloger::services::preview::CacheEvent& event) {
+                     return event.error;
+                   });
+  ASSERT_NE(it, events.end());
+  EXPECT_TRUE(it->error);
+  EXPECT_FALSE(it->error_message.empty());
+  EXPECT_EQ(it->backend, "Stub");
+}
+
+TEST_F(PreviewServiceTest, AppliesExternalProfileWhenPresent) {
+  const auto icc_path = (root_path_ / relative_files_.front()).replace_extension(".icc");
+  writeICCProfile(icc_path);
+
+  preview_.warmRoot(root_id_, root_path_);
+  preview_.waitUntilIdle();
+
+  const auto key = relative_files_.front() + "#" + std::to_string(root_id_);
+  const auto cached = preview_.cachedPreview(key);
+  ASSERT_TRUE(cached.has_value());
+  EXPECT_NE(cached->color_profile.find("sRGB"), std::string::npos);
 }

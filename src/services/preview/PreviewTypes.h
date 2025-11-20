@@ -29,6 +29,8 @@ struct PreviewImage {
   std::string cache_key;
   std::filesystem::path source_path;
   std::vector<std::uint8_t> pixels;
+  bool color_managed{false};
+  std::string color_profile;
   int width{};
   int height{};
 };
@@ -38,6 +40,11 @@ struct CacheEvent {
   std::string relative_path;
   CacheTier tier{CacheTier::kRam};
   bool hit{false};
+  bool error{false};
+  std::string error_message;
+  std::string backend;
+  double gpu_upload_ms{0.0};
+  double color_transform_ms{0.0};
 };
 
 enum class PreviewState { kIdle = 0, kCached = 1, kGpuResident = 2 };

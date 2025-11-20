@@ -12,10 +12,11 @@ Project documentation lives under `/doc`, covering product overview, system arch
 
 ## Building & Testing
 Follow the strict build/test rules defined in `/doc/BuildTestingDeployment.md`:
-1. Configure the project using the provided CMake presets (`cmake --preset macos-debug`, `cmake --preset macos-release`, and analogous `linux-*`/`windows-*` presets).
-2. Build with `ninja` (or `cmake --build --preset …`).
-3. Run the automated suites with `ctest --preset all` (macOS Debug binaries) plus the performance harness.
-4. Ensure clang-format/clang-tidy/cppcheck are clean before submitting changes.
+1. Install the required SDKs: Qt6 Widgets, SQLite3 dev headers, ICU, LittleCMS (lcms2), libjpeg/libtiff/libheif/libde265, and (for future Windows/Linux work) the Vulkan SDK. Metal is the only GPU backend implemented today.
+2. Configure the project using the provided CMake presets (`cmake --preset macos-debug`, `cmake --preset macos-release`, and analogous `linux-*`/`windows-*` presets).
+3. Build with `ninja` (or `cmake --build --preset …`).
+4. Run the automated suites with `ctest --preset all` (macOS Debug binaries) plus the performance harness.
+5. Ensure clang-format/clang-tidy/cppcheck are clean before submitting changes.
 
 ### Quick Start
 ```bash
@@ -28,13 +29,20 @@ Use the `*-release` presets for optimized builds and the `linux-*` / `windows-*`
 ## Repository Structure
 - `src/app/` – Application shell and entry point (currently a stub wired to the placeholder services).
 - `src/services/` – Module-per-library scaffolding for Catalog, Preview, Ingest, Metadata, Delivery, and Tasks services.
+- `src/platform/gpu/` – GPU bridge implementations (Metal on macOS today, Vulkan stubs reserved for future ports) powering the preview renderer.
 - `src/platform/` – Host detection and OS abstraction stubs.
 - `src/config/` – Settings/bootstrap configuration placeholders.
 - `.github/workflows/super-linter.yml` – GitHub Actions workflow running [Super Linter](https://github.com/super-linter/super-linter) on pushes/PRs for repo-wide lint coverage.
 - `src/tests/unit/` – GoogleTest suites (e.g., catalog and preview services).
-- `src/tests/perf/` – Lightweight performance harnesses (preview pipeline latency, etc.) invoked via `ctest`.
+- `src/tests/perf/` – Lightweight performance harnesses (preview pipeline latency/GPU timings) invoked via `ctest`.
 - `third_party/adobe_xmp/` – Adobe XMP Toolkit SDK (vendored from github.com/adobe/XMP-Toolkit-SDK) used for IPTC/XMP serialization.
+- `doc/Phase3DevelopmentPlan.md` – Breakdown of the remaining Phase 3 tasks (Metal renderer, embedded ICC parsing, UI/perf wiring).
 - `doc/` – Product and architecture documentation.
 - `Agents.md` – Internal agent rules (ignored from Git).
+
+### Preview Pipeline Notes
+- The preview extractor looks for optional ICC sidecars next to each image (e.g., `IMG_0001.CR3` + `IMG_0001.icc`). If none are present, it falls back to sRGB before running LittleCMS conversions.
+- Cache hit/miss/error events are surfaced through the PreviewService event sink; the app bootstrap prints aggregate counters for quick diagnostics.
+- Metal is the active GPU backend on macOS; Vulkan stubs exist on Windows/Linux until the renderer is implemented there.
 
 Refer to `Agents.md` for the exhaustive implementation roadmap, coding standards, security constraints, and workflows.

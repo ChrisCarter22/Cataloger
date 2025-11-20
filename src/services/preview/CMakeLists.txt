@@ -1,8 +1,9 @@
 add_library(
   cataloger_preview
   STATIC
+    ColorTransformer.cpp
+    IccProfileExtractor.cpp
     DirectoryScanner.cpp
-    GpuBridge.cpp
     PreviewCache.cpp
     PreviewExtractor.cpp
     PreviewService.cpp)
@@ -15,4 +16,6 @@ target_compile_features(cataloger_preview PUBLIC cxx_std_20)
 target_link_libraries(
   cataloger_preview
   PUBLIC
-    cataloger_catalog)
+    cataloger_catalog
+    cataloger_platform
+    LCMS2::LCMS2)

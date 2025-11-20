@@ -1,23 +1,29 @@
 #pragma once
 
 #include <atomic>
+#include <array>
 #include <condition_variable>
 #include <cstddef>
 #include <filesystem>
+#include <fstream>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <queue>
 #include <stop_token>
+#include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
 
+#include "ColorTransformer.h"
 #include "DirectoryScanner.h"
-#include "GpuBridge.h"
+#include "IccProfileExtractor.h"
 #include "PreviewCache.h"
 #include "PreviewExtractor.h"
 #include "PreviewTypes.h"
+#include "platform/gpu/GpuBridge.h"
 #include "services/catalog/CatalogService.h"
 
 namespace cataloger::services::preview {
@@ -33,6 +39,8 @@ public:
 
   void setCatalogService(services::catalog::CatalogService* catalog);
   void setEventSink(CacheEventSink sink);
+  void setGpuBridgeForTesting(
+      std::unique_ptr<cataloger::platform::gpu::GpuBridge> bridge);
 
   void warmRoot(int root_id, const std::filesystem::path& root_path);
   void requestPreview(int root_id, const std::string& relative_path);
@@ -45,10 +53,21 @@ private:
   void scheduleJob(const PreviewDescriptor& descriptor);
   void workerLoop(std::stop_token stop_token);
   void processJob(const PreviewDescriptor& descriptor);
-  void emitEvent(const PreviewDescriptor& descriptor, CacheTier tier, bool hit);
+  void emitEvent(const PreviewDescriptor& descriptor,
+                 CacheTier tier,
+                 bool hit,
+                 bool error = false,
+                 const std::string& message = {},
+                 const std::string& backend = {},
+                 double gpu_ms = 0.0,
+                 double transform_ms = 0.0);
   void storeDescriptorCache(int root_id,
                             std::vector<PreviewDescriptor> descriptors);
   void scheduleNeighbors(int root_id, std::size_t anchor_index);
+  std::vector<std::uint8_t> loadEmbeddedProfile(
+      const PreviewDescriptor& descriptor) const;
+  static std::string backendLabel(
+      const cataloger::platform::gpu::GpuBridge* bridge);
   void shutdown();
 
   services::catalog::CatalogService* catalog_service_;
@@ -56,8 +75,9 @@ private:
 
   DirectoryScanner scanner_;
   PreviewExtractor extractor_;
+  ColorTransformer color_transformer_;
   PreviewCache cache_;
-  GpuBridge gpu_bridge_;
+  std::unique_ptr<cataloger::platform::gpu::GpuBridge> gpu_bridge_;
 
   mutable std::mutex queue_mutex_;
   mutable std::condition_variable queue_cv_;

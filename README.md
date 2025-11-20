@@ -12,13 +12,24 @@ Project documentation lives under `/doc`, covering product overview, system arch
 
 ## Building & Testing
 Follow the strict build/test rules defined in `/doc/BuildTestingDeployment.md`:
-1. Configure the project using the provided CMake presets (`cmake --preset <platform>-debug|release`).
+1. Configure the project using the provided CMake presets (`cmake --preset macos-debug`, `cmake --preset macos-release`, and analogous `linux-*`/`windows-*` presets).
 2. Build with `ninja` (or `cmake --build --preset …`).
-3. Run the full automated test matrix via `ctest --preset all` plus the performance harness.
+3. Run the automated suites with `ctest --preset all` (macOS Debug binaries) plus the performance harness.
 4. Ensure clang-format/clang-tidy/cppcheck are clean before submitting changes.
 
+### Quick Start
+```bash
+cmake --preset macos-debug
+cmake --build --preset macos-debug
+ctest --preset all
+```
+Use the `*-release` presets for optimized builds and the `linux-*` / `windows-*` presets on their respective hosts. All presets live in `CMakePresets.json` and reference toolchains under `cmake/toolchains/`.
+
 ## Repository Structure
-- `src/` – Application shell, services, platform abstractions, and shared logic (to be implemented following the roadmap).
+- `src/app/` – Application shell and entry point (currently a stub wired to the placeholder services).
+- `src/services/` – Module-per-library scaffolding for Catalog, Preview, Ingest, Metadata, Delivery, and Tasks services.
+- `src/platform/` – Host detection and OS abstraction stubs.
+- `src/config/` – Settings/bootstrap configuration placeholders.
 - `doc/` – Product and architecture documentation.
 - `Agents.md` – Internal agent rules (ignored from Git).
 

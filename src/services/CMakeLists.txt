@@ -1,0 +1,6 @@
+add_subdirectory(catalog)
+add_subdirectory(preview)
+add_subdirectory(ingest)
+add_subdirectory(metadata)
+add_subdirectory(delivery)
+add_subdirectory(tasks)

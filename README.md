@@ -1,6 +1,6 @@
 # Cataloger
 
-Cataloger is a high-performance, JPEG-driven, metadata-aware image browser engineered for instant culling. It displays embedded camera previews rather than rendering RAW pixels, prioritizing speed while maintaining full color accuracy through LittleCMS and Metal/Vulkan pipelines. Key capabilities include:
+Cataloger is a high-performance, JPEG-driven, metadata-aware image browser engineered for instant culling. It displays embedded camera previews rather than rendering RAW pixels, prioritizing speed while maintaining full color accuracy through a LittleCMS + Metal pipeline. Key capabilities include:
 
 - Instant embedded preview loading with multithreaded extraction and aggressive caching.
 - Metadata-centric workflows (IPTC/XMP, RAW+JPEG pairing, live rating/tagging, auto-advance).
@@ -12,7 +12,7 @@ Project documentation lives under `/doc`, covering product overview, system arch
 
 ## Building & Testing
 Follow the strict build/test rules defined in `/doc/BuildTestingDeployment.md`:
-1. Install the required SDKs: Qt6 Widgets, SQLite3 dev headers, ICU, LittleCMS (lcms2), libjpeg/libtiff/libheif/libde265, and (for future Windows/Linux work) the Vulkan SDK. Metal is the only GPU backend implemented today.
+1. Install the required SDKs: Qt6 Widgets, SQLite3 dev headers, ICU, LittleCMS (lcms2), and libjpeg/libtiff/libheif/libde265. Metal is the only GPU backend implemented today; Windows/Linux GPU backends will be added in a future port.
 2. Configure the project using the provided CMake presets (`cmake --preset macos-debug`, `cmake --preset macos-release`, and analogous `linux-*`/`windows-*` presets).
 3. Build with `ninja` (or `cmake --build --preset …`).
 4. Run the automated suites with `ctest --preset all` (macOS Debug binaries) plus the performance harness.
@@ -29,7 +29,7 @@ Use the `*-release` presets for optimized builds and the `linux-*` / `windows-*`
 ## Repository Structure
 - `src/app/` – Application shell and entry point (currently a stub wired to the placeholder services).
 - `src/services/` – Module-per-library scaffolding for Catalog, Preview, Ingest, Metadata, Delivery, and Tasks services.
-- `src/platform/gpu/` – GPU bridge implementations (Metal on macOS today, Vulkan stubs reserved for future ports) powering the preview renderer.
+- `src/platform/gpu/` – GPU bridge implementations (Metal on macOS today) powering the preview renderer.
 - `src/platform/` – Host detection and OS abstraction stubs.
 - `src/config/` – Settings/bootstrap configuration placeholders.
 - `.github/workflows/super-linter.yml` – GitHub Actions workflow running [Super Linter](https://github.com/super-linter/super-linter) on pushes/PRs for repo-wide lint coverage.
@@ -43,6 +43,6 @@ Use the `*-release` presets for optimized builds and the `linux-*` / `windows-*`
 ### Preview Pipeline Notes
 - Embedded ICC profiles are detected automatically (JPEG APP2 sections today) before falling back to adjacent sidecars (`.icc`/`.ICM`/`.profile`) and finally sRGB. Profile names appear in `PreviewImage.color_profile` and in UI metadata panels.
 - Cache hit/miss/error events are surfaced through the PreviewService event sink; the bootstrap wires them into a mock UI logger for quick diagnostics. Real presenters will subscribe in a future milestone.
-- Metal is the active GPU backend on macOS; the Vulkan path remains a stub until the Windows/Linux port begins.
+- Metal is the active GPU backend on macOS; Windows/Linux GPU backends will be introduced when those ports begin.
 
 Refer to `Agents.md` for the exhaustive implementation roadmap, coding standards, security constraints, and workflows.

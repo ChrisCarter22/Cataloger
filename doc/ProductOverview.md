@@ -9,7 +9,7 @@
 ## Core Characteristics
 - **Instant Embedded Preview Loading:** Reads RAW containers (CR3, NEF, ARW, etc.), extracts the full-resolution embedded JPEG, and displays it immediately—no demosaicing, GPU color transforms, or heavy CPU work.
 - **Zero RAW Processing:** The viewer never debayers pixels or applies tone curves/color profiles; it relies entirely on embedded previews or (optionally) Adobe DNG Converter when users request a slower RAW→JPEG path.
-- **Color-Managed Pipeline:** Each preview leverages its embedded profile, which is converted via LittleCMS to the monitor profile before rendering through Metal (macOS) or Vulkan (Windows).
+- **Color-Managed Pipeline:** Each preview leverages its embedded profile, which is converted via LittleCMS to the monitor profile before rendering through Metal on macOS. GPU backends for Windows/Linux will be introduced in a future port.
 - **Metadata-Centric Experience:** XMP drives IPTC captions, ratings, tags, and RAW+JPEG sync; sidecar reads/writes keep metadata in lockstep with the high-speed viewer.
 - **Fast Navigation & Caching:** Aggressive preloading (adjacent images, predictive read-ahead, RAM caches) keeps arrow-key navigation buttery smooth, even in huge folders.
 - **Multi-Core Thumbnail Extraction:** Directory browsing spawns multi-threaded JPEG extraction so thumbnails appear without blocking the UI.

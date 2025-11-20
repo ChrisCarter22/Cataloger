@@ -7,7 +7,7 @@
 
 namespace cataloger::platform::gpu {
 
-enum class Backend { kMetal, kVulkan, kStub };
+enum class Backend { kMetal, kStub };
 
 class GpuBridge {
 public:

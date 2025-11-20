@@ -37,7 +37,6 @@ endif()
 
 find_package(Qt6 COMPONENTS ${CATALOGER_QT_COMPONENTS} QUIET)
 find_package(SQLite3 QUIET)
-find_package(Vulkan QUIET)
 find_package(ICU COMPONENTS i18n uc QUIET)
 find_package(PkgConfig QUIET)
 if(PkgConfig_FOUND)
@@ -66,13 +65,6 @@ if(NOT SQLite3_FOUND)
   message(
     FATAL_ERROR
       "SQLite3 development files are required for the catalog service. Install the SQLite3 SDK and retry."
-  )
-endif()
-
-if(NOT Vulkan_FOUND)
-  message(
-    STATUS
-      "Vulkan SDK not found; GPU preview pipeline targets will be enabled once the SDK is installed."
   )
 endif()
 

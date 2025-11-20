@@ -4,12 +4,12 @@
 - **Presentation Layer (Qt6 Widgets):** Navigator, Contact Sheet, Viewer, Metadata panes, Navigator panel, and FTP dialogs share a Qt state store connected to backend services. Views subscribe to catalog/preview updates for immediate UI refreshes.
 - **Application Core & Message Bus:** Central dispatcher/event loop routes ingest events, watcher notifications, metadata commits, and UI commands via typed signals/slots for deterministic ordering.
 - **Catalog Service:** Owns the SQLite catalog (`catalog.db`), exposing async APIs for queries/mutations and emitting change deltas to the UI, preview cache, ingest service, and delivery stack.
-- **Preview & Cache Service:** Handles directory scans, multithreaded embedded JPEG extraction, RAM/preload caches, and GPU presentation via Metal (macOS) or Vulkan (Windows/Linux).
+- **Preview & Cache Service:** Handles directory scans, multithreaded embedded JPEG extraction, RAM/preload caches, and GPU presentation via Metal on macOS. GPU backends for Windows/Linux will be added when those ports begin.
 - **Ingest Service:** Manages source detection, filtering, copy/mirroring, renaming, metadata application, incremental ingest state, and post-ingest actions; modeled as resumable job state machines.
 - **Metadata Engine:** Provides global/local/per-image templates, IPTC/XMP editing, validation, and write-back to sidecars/headers while updating catalog metadata revisions.
 - **Delivery Services:** FTP/SFTP uploader and future exporters use a shared transfer controller with queue tracking and Tasks UI integration.
 - **Background Task Orchestrator:** Schedules ingest copies, watcher reconciliations, metadata writes, preview extraction, FTP transfers, catalog checkpoints, and integrity checks on prioritized thread pools.
-- **Platform Abstraction Layer:** Wraps OS-specific APIs (FSEvents/ReadDirectoryChangesW/inotify, Metal, native Vulkan, Keychain/DPAPI, dialogs, threading) to keep higher layers portable.
+- **Platform Abstraction Layer:** Wraps OS-specific APIs (FSEvents/ReadDirectoryChangesW/inotify, Metal, future Windows/Linux GPU APIs, Keychain/DPAPI, dialogs, threading) to keep higher layers portable.
 - **Configuration & Secrets:** Settings service stores preferences, ingest presets, templates, and credentials (via OS secure stores). Handles feature flags and schema migrations.
 
 ## Catalog Persistence Model

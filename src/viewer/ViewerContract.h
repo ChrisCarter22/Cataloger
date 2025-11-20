@@ -6,7 +6,7 @@
 
 namespace cataloger::viewer {
 
-enum class Backend { kMetal, kVulkan, kStub };
+enum class Backend { kMetal, kStub };
 
 struct TextureHandle {
   Backend backend{Backend::kStub};
@@ -40,7 +40,5 @@ public:
 #if defined(__APPLE__)
 std::unique_ptr<Viewer> CreateMetalViewer();
 #endif
-
-std::unique_ptr<Viewer> CreateVulkanViewerStub();
 
 }  // namespace cataloger::viewer

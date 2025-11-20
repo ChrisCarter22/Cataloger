@@ -317,8 +317,6 @@ std::string PreviewService::backendLabel(
   switch (bridge->backend()) {
     case cataloger::platform::gpu::Backend::kMetal:
       return "Metal";
-    case cataloger::platform::gpu::Backend::kVulkan:
-      return "Vulkan";
     default:
       return "Stub";
   }

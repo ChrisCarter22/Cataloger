@@ -1,10 +1,10 @@
 # Viewer Contract (Preview Pipeline → Viewer)
 
-This document specifies the minimal interface between the preview pipeline and the UI Viewer. The goal is to let the preview service (Metal on macOS first) deliver color-managed textures without leaking platform-specific details into higher layers. Windows/Linux ports can adopt the same API with different backends (Vulkan, D3D) later.
+This document specifies the minimal interface between the preview pipeline and the UI Viewer. The goal is to let the preview service (Metal on macOS first) deliver color-managed textures without leaking platform-specific details into higher layers. Windows/Linux ports can adopt the same API with appropriate GPU backends later.
 
 ## Texture Formats
 - **macOS (v1):** BGRA8 (unsigned, premultiplied alpha). All Metal uploads publish BGRA8 textures.
-- **Future Windows/Linux:** RGBA8 (Vulkan/D3D) to match cross-platform expectations.
+- **Future Windows/Linux:** RGBA8 (GPU backend TBD) to match cross-platform expectations.
 - Additional formats (10-bit, HDR) can be negotiated later via `FrameContext::format`.
 
 ## Sync & Frame Lifecycle
@@ -18,7 +18,7 @@ This document specifies the minimal interface between the preview pipeline and t
 
 ## Platform Targets
 - **Mac v1:** Implemented via `MetalViewer`, which owns a `CAMetalLayer`, command queue, and drawable lifecycle. It accepts BGRA8 textures from the preview service/offscreen pipeline and blits them into the drawable before presentation.
-- **Windows/Linux future:** `VulkanViewer` / `D3DViewer` stubs compile today and log “not implemented” while honoring the same contract. When the Windows port begins, the stub can be swapped with a real implementation without touching UI/business logic.
+- **Windows/Linux future:** Viewer backends will honor the same contract but use the platform’s GPU API (to be chosen when ports begin). They can be swapped in without touching UI/business logic.
 
 ## Data Structures
 - `viewer::TextureHandle` wraps the native handle (`id<MTLTexture>` on macOS) plus backend metadata.

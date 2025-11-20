@@ -2,8 +2,7 @@ add_library(
   cataloger_viewer
   STATIC
     ViewerContract.h
-    metal/MetalViewer.mm
-    vulkan/VulkanViewerStub.cpp)
+    metal/MetalViewer.mm)
 target_include_directories(
   cataloger_viewer
   PUBLIC

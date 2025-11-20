@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <vector>
@@ -24,6 +25,7 @@ struct StoredFile {
   std::string relative_path;
   std::string extension;
   std::optional<std::int64_t> stack_group_id;
+  int preview_state{};
 };
 
 struct SyncEvent {
@@ -55,6 +57,7 @@ public:
                         std::string payload);
   std::vector<SyncEvent> pendingSyncEvents() const;
   void markSyncEventProcessed(std::int64_t event_id);
+  void updatePreviewState(std::int64_t file_id, int preview_state);
 
 private:
   void open();
@@ -66,6 +69,7 @@ private:
 
   std::filesystem::path db_path_;
   sqlite3* db_;
+  mutable std::mutex db_mutex_;
 };
 
 }  // namespace cataloger::services::catalog

@@ -31,7 +31,7 @@
 
 ## Deployment Targets & Packaging
 - **Platforms:** macOS 13 Ventura & 14 Sonoma (Intel + Apple Silicon) and Windows 10/11 (22H2+) are tier-1. Linux builds are developer-only until packaging is finalized.
-- **Packaging:** macOS releases ship as signed/notarized DMGs produced via `macdeployqt`, bundling MoltenVK, ICU, SQLite, and other required libs. Windows releases use MSIX/installers created with `windeployqt`, including Vulkan runtime redistributables and VC++ runtimes.
-- **Dependencies in Installers:** Qt6 Widgets modules, ICU data, SQLite, libjpeg-turbo, libtiff, libheif, libde265, LittleCMS, Adobe XMP Toolkit, and Vulkan/MoltenVK components must ship with installers.
+- **Packaging:** macOS releases ship as signed/notarized DMGs produced via `macdeployqt`, bundling the required Metal-compatible libraries, ICU, SQLite, and other dependencies. Windows releases use MSIX/installers created with `windeployqt`, including Vulkan runtime redistributables and VC++ runtimes.
+- **Dependencies in Installers:** Qt6 Widgets modules, ICU data, SQLite, libjpeg-turbo, libtiff, libheif, libde265, LittleCMS, Adobe XMP Toolkit, and Vulkan components must ship with installers (Metal support is provided by macOS itself).
 - **Updates & Rollback:** Publish versioned manifests, SHA-256 signatures, and changelog entries for each build. Allow rollback by reinstalling prior DMG/MSIX without manual cleanup.
 - **CI Artifacts:** Release pipelines output notarized/signed builds plus symbol files (dSYM/PDB) for crash diagnostics.

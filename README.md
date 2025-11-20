@@ -31,6 +31,9 @@ Use the `*-release` presets for optimized builds and the `linux-*` / `windows-*`
 - `src/platform/` – Host detection and OS abstraction stubs.
 - `src/config/` – Settings/bootstrap configuration placeholders.
 - `.github/workflows/super-linter.yml` – GitHub Actions workflow running [Super Linter](https://github.com/super-linter/super-linter) on pushes/PRs for repo-wide lint coverage.
+- `src/tests/unit/` – GoogleTest suites (e.g., catalog and preview services).
+- `src/tests/perf/` – Lightweight performance harnesses (preview pipeline latency, etc.) invoked via `ctest`.
+- `third_party/adobe_xmp/` – Adobe XMP Toolkit SDK (vendored from github.com/adobe/XMP-Toolkit-SDK) used for IPTC/XMP serialization.
 - `doc/` – Product and architecture documentation.
 - `Agents.md` – Internal agent rules (ignored from Git).
 

@@ -9,7 +9,7 @@
 - **Metadata Engine:** Provides global/local/per-image templates, IPTC/XMP editing, validation, and write-back to sidecars/headers while updating catalog metadata revisions.
 - **Delivery Services:** FTP/SFTP uploader and future exporters use a shared transfer controller with queue tracking and Tasks UI integration.
 - **Background Task Orchestrator:** Schedules ingest copies, watcher reconciliations, metadata writes, preview extraction, FTP transfers, catalog checkpoints, and integrity checks on prioritized thread pools.
-- **Platform Abstraction Layer:** Wraps OS-specific APIs (FSEvents/ReadDirectoryChangesW/inotify, Metal/MoltenVK, native Vulkan, Keychain/DPAPI, dialogs, threading) to keep higher layers portable.
+- **Platform Abstraction Layer:** Wraps OS-specific APIs (FSEvents/ReadDirectoryChangesW/inotify, Metal, native Vulkan, Keychain/DPAPI, dialogs, threading) to keep higher layers portable.
 - **Configuration & Secrets:** Settings service stores preferences, ingest presets, templates, and credentials (via OS secure stores). Handles feature flags and schema migrations.
 
 ## Catalog Persistence Model

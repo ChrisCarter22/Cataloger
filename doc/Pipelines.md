@@ -8,7 +8,7 @@
 3. **In-Memory Caching**
    - Tier A RAM cache stores recently opened previews decompressed; Tier B preload cache speculatively loads neighbors (current ±2) to keep arrow navigation smooth.
 4. **Color-Managed Display**
-   - Embedded profiles flow through LittleCMS → monitor profile, then render via Metal (macOS, through MoltenVK) or native Vulkan (Windows/Linux).
+   - Embedded profiles flow through LittleCMS → monitor profile, then render via Metal on macOS or native Vulkan on Windows/Linux.
 5. **Lag-Free Zooming**
    - Zoom uses the embedded JPEG decoded once into RAM; GPU transforms handle scaling for instant 1:1 checks.
 

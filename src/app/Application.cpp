@@ -1,6 +1,7 @@
 #include "Application.h"
 
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -37,7 +38,12 @@ void Application::bootstrap() {
   const auto stored_files = catalog_service.listFiles(root_id);
 
   services::preview::PreviewService preview_service;
+  preview_service.setCatalogService(&catalog_service);
+  std::vector<services::preview::CacheEvent> cache_events;
+  preview_service.setEventSink(
+      [&](const services::preview::CacheEvent& event) { cache_events.push_back(event); });
   preview_service.primeCaches(2);
+  preview_service.warmRoot(root_id, root_path);
 
   services::ingest::IngestService ingest_service;
   ingest_service.queueSources({});
@@ -51,8 +57,20 @@ void Application::bootstrap() {
   services::tasks::TaskScheduler scheduler;
   scheduler.schedule("bootstrap");
 
+  if (!snapshot.empty()) {
+    preview_service.requestPreview(root_id, snapshot.front().relative_path);
+    preview_service.waitUntilIdle();
+  }
+  const auto cache_key = snapshot.empty()
+                             ? std::string{}
+                             : snapshot.front().relative_path + "#" + std::to_string(root_id);
+  [[maybe_unused]] const auto cached_preview =
+      cache_key.empty() ? std::optional<services::preview::PreviewImage>{}
+                        : preview_service.cachedPreview(cache_key);
+
+  preview_service.waitUntilIdle();
+
   [[maybe_unused]] const auto catalog_size = stored_files.size();
-  [[maybe_unused]] const auto cached_neighbors = preview_service.cachedNeighbors();
   [[maybe_unused]] const auto queued_sources = ingest_service.sources().size();
   [[maybe_unused]] const auto last_template = metadata_service.lastTemplate();
   [[maybe_unused]] const auto endpoint = delivery_service.endpoint();
@@ -61,7 +79,6 @@ void Application::bootstrap() {
   [[maybe_unused]] const auto platform_name = platform_.displayName();
   [[maybe_unused]] const auto profile = settings_.activeProfile();
   (void)catalog_size;
-  (void)cached_neighbors;
   (void)queued_sources;
   (void)last_template;
   (void)endpoint;
@@ -69,6 +86,8 @@ void Application::bootstrap() {
   (void)sync_backlog;
   (void)platform_name;
   (void)profile;
+  (void)cache_events;
+  (void)cached_preview;
 }
 
 int Application::run() {

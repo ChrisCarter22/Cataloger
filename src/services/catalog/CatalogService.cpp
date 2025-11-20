@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cctype>
 #include <map>
+#include <mutex>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -156,10 +157,12 @@ CREATE INDEX IF NOT EXISTS idx_sync_queue_processed ON sync_queue(processed_flag
 CatalogService::CatalogService() : db_(nullptr) {}
 
 CatalogService::~CatalogService() {
+  std::scoped_lock lock(db_mutex_);
   close();
 }
 
 void CatalogService::configureDatabase(const std::filesystem::path& db_path) {
+  std::scoped_lock lock(db_mutex_);
   close();
   db_path_ = db_path;
   if (!db_path_.has_parent_path()) {
@@ -171,11 +174,13 @@ void CatalogService::configureDatabase(const std::filesystem::path& db_path) {
 }
 
 void CatalogService::initializeSchema() {
+  std::scoped_lock lock(db_mutex_);
   ensureOpen();
   applySchema(std::string(kSchemaSql));
 }
 
 int CatalogService::registerRoot(const std::filesystem::path& root_path) {
+  std::scoped_lock lock(db_mutex_);
   ensureOpen();
   const auto absolute = std::filesystem::weakly_canonical(root_path).string();
   Statement insert(db_, "INSERT INTO root_folders(path, created_at) VALUES(?, ?)"
@@ -231,6 +236,7 @@ void CatalogService::ingestRecords(int root_id, const std::vector<FileRecord>& f
   if (files.empty()) {
     return;
   }
+  std::scoped_lock lock(db_mutex_);
   ensureOpen();
   exec(db_, "BEGIN IMMEDIATE TRANSACTION;");
 
@@ -298,9 +304,10 @@ void CatalogService::ingestRecords(int root_id, const std::vector<FileRecord>& f
 }
 
 std::vector<StoredFile> CatalogService::listFiles(int root_id) const {
+  std::scoped_lock lock(db_mutex_);
   ensureOpen();
   Statement stmt(db_,
-                 "SELECT id, relative_path, extension, stack_group_id "
+                 "SELECT id, relative_path, extension, stack_group_id, preview_state "
                  "FROM files WHERE root_id=? ORDER BY id ASC;");
   sqlite3_bind_int(stmt.get(), 1, root_id);
 
@@ -315,6 +322,7 @@ std::vector<StoredFile> CatalogService::listFiles(int root_id) const {
     if (sqlite3_column_type(stmt.get(), 3) != SQLITE_NULL) {
       file.stack_group_id = sqlite3_column_int64(stmt.get(), 3);
     }
+    file.preview_state = sqlite3_column_int(stmt.get(), 4);
     rows.push_back(std::move(file));
   }
   return rows;
@@ -324,6 +332,7 @@ void CatalogService::enqueueSyncEvent(int root_id,
                                       std::string relative_path,
                                       std::string event_type,
                                       std::string payload) {
+  std::scoped_lock lock(db_mutex_);
   ensureOpen();
   Statement stmt(db_,
                  "INSERT INTO sync_queue(root_id, relative_path, event_type, payload, "
@@ -340,6 +349,7 @@ void CatalogService::enqueueSyncEvent(int root_id,
 }
 
 std::vector<SyncEvent> CatalogService::pendingSyncEvents() const {
+  std::scoped_lock lock(db_mutex_);
   ensureOpen();
   Statement stmt(
       db_, "SELECT id, root_id, relative_path, event_type, payload, processed_flag, "
@@ -366,9 +376,21 @@ std::vector<SyncEvent> CatalogService::pendingSyncEvents() const {
 }
 
 void CatalogService::markSyncEventProcessed(std::int64_t event_id) {
+  std::scoped_lock lock(db_mutex_);
   ensureOpen();
   Statement stmt(db_, "UPDATE sync_queue SET processed_flag=1 WHERE id=?;");
   sqlite3_bind_int64(stmt.get(), 1, event_id);
+  if (sqlite3_step(stmt.get()) != SQLITE_DONE) {
+    throw std::runtime_error(sqlite3_errmsg(db_));
+  }
+}
+
+void CatalogService::updatePreviewState(std::int64_t file_id, int preview_state) {
+  std::scoped_lock lock(db_mutex_);
+  ensureOpen();
+  Statement stmt(db_, "UPDATE files SET preview_state=? WHERE id=?;");
+  sqlite3_bind_int(stmt.get(), 1, preview_state);
+  sqlite3_bind_int64(stmt.get(), 2, file_id);
   if (sqlite3_step(stmt.get()) != SQLITE_DONE) {
     throw std::runtime_error(sqlite3_errmsg(db_));
   }

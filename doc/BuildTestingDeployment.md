@@ -9,6 +9,7 @@
 - **Unit Tests:** GoogleTest for core logic, QtTest for UI components.
 - **Integration Tests:** Headless suites validating ingest, metadata pipelines, filesystem/database writes, and XMP output.
 - **Performance Tests:** Benchmark harness measuring preview load latency (<150 ms p95), navigation responsiveness (<16 ms per frame), and ingest throughput (≥250 MB/s SSD-bound).
+  - Preview perf harness lives under `src/tests/perf/preview`; run via `ctest --preset all` and inspect `[perf]` logs. Budgets: `warmRoot` <400 ms, first preview <200 ms, GPU upload max <150 ms on reference hardware.
 - **Validation Checklist:** Every change builds Release + Debug, runs the entire automated test matrix, exercises smoke tests (ingest, preview, metadata, FTP), and attaches benchmark deltas to PRs.
 
 ## Strict Build & Test Rules

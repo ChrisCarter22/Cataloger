@@ -5,8 +5,8 @@
 
 namespace cataloger::services::preview::icc {
 
-// Extracts embedded ICC profile bytes from the given image (JPEG/RAW).
-// Returns an empty vector if no profile is detected.
+// Attempts to extract an embedded ICC profile from a JPEG/RAW file.
+// Returns the ICC bytes when found; otherwise an empty vector.
 std::vector<std::uint8_t> ExtractEmbeddedProfile(
     const std::filesystem::path& image_path);
 

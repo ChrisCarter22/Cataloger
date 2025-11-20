@@ -2,7 +2,8 @@ add_library(
   cataloger_appcore
   STATIC
     Application.cpp
-    ../mock_ui/PreviewEventLogger.cpp)
+    ../mock_ui/PreviewEventLogger.cpp
+    ../ui/mock/PreviewSubscriber.cpp)
 target_include_directories(
   cataloger_appcore
   PUBLIC
@@ -13,6 +14,7 @@ target_link_libraries(
   PUBLIC
     cataloger_config
     cataloger_platform
+    cataloger_viewer
     cataloger_catalog
     cataloger_preview
     cataloger_ingest

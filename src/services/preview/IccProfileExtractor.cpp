@@ -14,6 +14,7 @@ bool IsJpeg(const std::filesystem::path& path) {
   return ext == ".jpg" || ext == ".JPG" || ext == ".jpeg" || ext == ".JPEG";
 }
 
+// Reads length bytes from file into buffer; returns false on failure.
 bool ReadSegment(std::ifstream& file,
                  std::vector<std::uint8_t>& buffer,
                  std::uint16_t length) {
@@ -32,62 +33,60 @@ std::vector<std::uint8_t> ExtractFromJpeg(const std::filesystem::path& path) {
     return file.get();
   };
 
-  // Validate SOI marker (0xFFD8).
+  // Verify SOI (0xFFD8).
   if (read_byte() != 0xFF || read_byte() != 0xD8) {
     return {};
   }
 
   std::map<int, std::vector<std::uint8_t>> chunks;
-  int chunk_count = -1;
+  int chunk_total = -1;
 
   while (file && file.good()) {
-    int marker_prefix = read_byte();
-    if (marker_prefix != 0xFF) {
+    int prefix = read_byte();
+    if (prefix != 0xFF) {
       continue;
     }
     int marker = read_byte();
-    if (marker == 0xD9 || marker == 0xDA || marker == EOF) {
-      break;  // EOI or SOS, stop scanning headers.
+    if (marker == EOF || marker == 0xD9 || marker == 0xDA) {
+      break;  // EOI or SOS -> stop scanning
     }
 
-    if (marker == 0xE2) {  // APP2
-      const auto high = read_byte();
-      const auto low = read_byte();
-      const std::uint16_t length = (high << 8) | low;
-      if (length < 2) {
-        break;
-      }
+    const int high = read_byte();
+    const int low = read_byte();
+    const std::uint16_t length = static_cast<std::uint16_t>((high << 8) | low);
+    if (length < 2) {
+      break;
+    }
+
+    if (marker == 0xE2) {  // APP2 potential ICC chunk
       std::vector<std::uint8_t> payload;
       if (!ReadSegment(file, payload, length - 2)) {
         break;
       }
-      static constexpr char kICCSignature[] = "ICC_PROFILE";
-      if (payload.size() < sizeof(kICCSignature)) {
+
+      static constexpr char kSignature[] = "ICC_PROFILE";
+      if (payload.size() < sizeof(kSignature)) {
         continue;
       }
-      if (std::memcmp(payload.data(), kICCSignature, sizeof(kICCSignature) - 1) !=
-          0) {
+      if (std::memcmp(payload.data(), kSignature, sizeof(kSignature) - 1) != 0) {
         continue;
       }
-      if (payload.size() < sizeof(kICCSignature) + 2) {
+      if (payload.size() < sizeof(kSignature) + 2) {
         continue;
       }
-      const int chunk_number = payload[sizeof(kICCSignature)];
-      const int chunk_total = payload[sizeof(kICCSignature) + 1];
-      if (chunk_total <= 0 || chunk_number <= 0) {
+
+      const int chunk_number = payload[sizeof(kSignature)];
+      const int total_chunks = payload[sizeof(kSignature) + 1];
+      if (chunk_number <= 0 || total_chunks <= 0) {
         continue;
       }
-      chunk_count = std::max(chunk_count, chunk_total);
-      std::vector<std::uint8_t> chunk(payload.begin() + sizeof(kICCSignature) + 2,
+      chunk_total = std::max(chunk_total, total_chunks);
+
+      std::vector<std::uint8_t> chunk(payload.begin() + sizeof(kSignature) + 2,
                                       payload.end());
       chunks[chunk_number] = std::move(chunk);
     } else {
-      const int high = read_byte();
-      const int low = read_byte();
-      const std::uint16_t length = (high << 8) | low;
-      if (length < 2) {
-        break;
-      }
+      // Skip non-APP2 segments.
       file.seekg(length - 2, std::ios::cur);
     }
   }
@@ -97,9 +96,10 @@ std::vector<std::uint8_t> ExtractFromJpeg(const std::filesystem::path& path) {
   }
 
   std::vector<std::uint8_t> profile;
-  const int total = (chunk_count == -1) ? static_cast<int>(chunks.size()) : chunk_count;
-  for (int i = 1; i <= total; ++i) {
-    auto it = chunks.find(i);
+  const int expected = (chunk_total == -1) ? static_cast<int>(chunks.size())
+                                           : chunk_total;
+  for (int i = 1; i <= expected; ++i) {
+    const auto it = chunks.find(i);
     if (it == chunks.end()) {
       return {};
     }
@@ -115,7 +115,7 @@ std::vector<std::uint8_t> ExtractEmbeddedProfile(
   if (IsJpeg(image_path)) {
     return ExtractFromJpeg(image_path);
   }
-  // RAW formats are not yet parsed; rely on sidecars for now.
+  // RAW parsing will be added once we standardize the metadata toolkit.
   return {};
 }
 

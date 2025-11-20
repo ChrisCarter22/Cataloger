@@ -41,8 +41,8 @@ Use the `*-release` presets for optimized builds and the `linux-*` / `windows-*`
 - `Agents.md` – Internal agent rules (ignored from Git).
 
 ### Preview Pipeline Notes
-- The preview extractor looks for optional ICC sidecars next to each image (e.g., `IMG_0001.CR3` + `IMG_0001.icc`). If none are present, it falls back to sRGB before running LittleCMS conversions.
-- Cache hit/miss/error events are surfaced through the PreviewService event sink; the app bootstrap prints aggregate counters for quick diagnostics.
-- Metal is the active GPU backend on macOS; Vulkan stubs exist on Windows/Linux until the renderer is implemented there.
+- Embedded ICC profiles are detected automatically (JPEG APP2 sections today) before falling back to adjacent sidecars (`.icc`/`.ICM`/`.profile`) and finally sRGB. Profile names appear in `PreviewImage.color_profile` and in UI metadata panels.
+- Cache hit/miss/error events are surfaced through the PreviewService event sink; the bootstrap wires them into a mock UI logger for quick diagnostics. Real presenters will subscribe in a future milestone.
+- Metal is the active GPU backend on macOS; the Vulkan path remains a stub until the Windows/Linux port begins.
 
 Refer to `Agents.md` for the exhaustive implementation roadmap, coding standards, security constraints, and workflows.

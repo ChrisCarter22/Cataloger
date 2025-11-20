@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "mock_ui/PreviewEventLogger.h"
+#include "ui/mock/PreviewSubscriber.h"
 #include "services/catalog/CatalogService.h"
 #include "services/delivery/DeliveryService.h"
 #include "services/ingest/IngestService.h"
@@ -42,10 +43,14 @@ void Application::bootstrap() {
   services::preview::PreviewService preview_service;
   preview_service.setCatalogService(&catalog_service);
   mock_ui::PreviewEventLogger preview_logger;
+  ui::mock::PreviewSubscriber contact_sheet("ContactSheet");
+  ui::mock::MockNavigator navigator;
+  navigator.bind(&contact_sheet);
   std::vector<services::preview::CacheEvent> cache_events;
   preview_service.setEventSink([&](const services::preview::CacheEvent& event) {
     cache_events.push_back(event);
     preview_logger.handle(event);
+    navigator.handleEvent(event);
   });
   preview_service.primeCaches(2);
   preview_service.warmRoot(root_id, root_path);
@@ -111,6 +116,7 @@ void Application::bootstrap() {
   std::cout << "[preview] cache hits=" << cache_hits
             << " misses=" << cache_misses
             << " errors=" << cache_errors << "\n";
+  preview_logger.renderSummary();
   preview_logger.renderSummary();
 }
 

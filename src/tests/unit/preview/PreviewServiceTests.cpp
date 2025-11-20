@@ -126,6 +126,10 @@ TEST_F(PreviewServiceTest, RequestPreviewPreloadsNeighbors) {
     relative_paths.insert(event.relative_path);
   }
   EXPECT_TRUE(relative_paths.contains(relative_files_[1]));
+  // Neighbor preloading: at least one of the immediate neighbors
+  // should have been scheduled around the active frame.
+  EXPECT_TRUE(relative_paths.contains(relative_files_.front()) ||
+              relative_paths.contains(relative_files_[2]));
 }
 
 class FailingBridge : public cataloger::platform::gpu::GpuBridge {

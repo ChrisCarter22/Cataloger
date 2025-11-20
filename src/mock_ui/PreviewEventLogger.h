@@ -1,7 +1,6 @@
 #pragma once
 
 #include <mutex>
-#include <string>
 #include <vector>
 
 #include "services/preview/PreviewTypes.h"
@@ -12,7 +11,7 @@ class PreviewEventLogger {
 public:
   void handle(const cataloger::services::preview::CacheEvent& event);
   void renderSummary() const;
-  [[nodiscard]] std::size_t errorCount() const;
+  [[nodiscard]] std::size_t total() const;
 
 private:
   mutable std::mutex mutex_;

@@ -1,5 +1,14 @@
 set(CMAKE_SYSTEM_NAME Darwin)
-set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
+
+if(NOT DEFINED CMAKE_OSX_ARCHITECTURES)
+  if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "arm64")
+    set(_cataloger_default_arch "arm64")
+  else()
+    set(_cataloger_default_arch "x86_64")
+  endif()
+  set(CMAKE_OSX_ARCHITECTURES "${_cataloger_default_arch}" CACHE STRING "" FORCE)
+endif()
+
 set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "" FORCE)
 
 if(NOT DEFINED CMAKE_C_COMPILER)

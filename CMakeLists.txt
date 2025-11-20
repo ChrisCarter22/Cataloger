@@ -27,8 +27,8 @@ endif()
 
 if(NOT SQLite3_FOUND)
   message(
-    STATUS
-      "SQLite3 development files not found; persistence layers remain placeholders during scaffolding."
+    FATAL_ERROR
+      "SQLite3 development files are required for the catalog service. Install the SQLite3 SDK and retry."
   )
 endif()
 
@@ -45,8 +45,20 @@ endif()
 
 option(CATALOGER_ENABLE_TESTS "Enable building Cataloger tests" ON)
 
+if(CATALOGER_ENABLE_TESTS)
+  include(CTest)
+  enable_testing()
+  find_package(GTest CONFIG QUIET)
+  if(NOT GTest_FOUND)
+    message(
+      FATAL_ERROR
+        "GoogleTest not found. Install it via Homebrew (`brew install googletest`) or provide a CMake package."
+    )
+  endif()
+endif()
+
 add_subdirectory(src)
 
 if(CATALOGER_ENABLE_TESTS)
-  enable_testing()
+  add_subdirectory(src/tests)
 endif()

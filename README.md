@@ -30,6 +30,7 @@ Use the `*-release` presets for optimized builds and the `linux-*` / `windows-*`
 - `src/services/` – Module-per-library scaffolding for Catalog, Preview, Ingest, Metadata, Delivery, and Tasks services.
 - `src/platform/` – Host detection and OS abstraction stubs.
 - `src/config/` – Settings/bootstrap configuration placeholders.
+- `.github/workflows/super-linter.yml` – GitHub Actions workflow running [Super Linter](https://github.com/super-linter/super-linter) on pushes/PRs for repo-wide lint coverage.
 - `doc/` – Product and architecture documentation.
 - `Agents.md` – Internal agent rules (ignored from Git).
 

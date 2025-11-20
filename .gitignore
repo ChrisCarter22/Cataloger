@@ -26,6 +26,7 @@ Makefile
 .vs/
 *.sln
 *.vcxproj*
+.github/
 
 # macOS / Windows noise
 .DS_Store
